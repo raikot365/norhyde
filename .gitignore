@@ -1,0 +1,26 @@
+# Dependencias
+node_modules/
+
+# Archivos de compilación de Astro
+dist/
+.astro/
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Sistema operativo y logs
+.DS_Store
+Thumbs.db
+*.log
+
+# Carpeta original de assets (Astro publica desde public/assets/)
+assets/
+
+# Sistema operativo y logs
+.DS_Store
+Thumbs.db
+*.log
+
+assets/

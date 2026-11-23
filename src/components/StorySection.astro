@@ -1,0 +1,297 @@
+---
+import { SITE, formatARS } from '../data/site';
+const largeCombo2 = SITE.combos.find((c) => c.format === 'botella' && c.qty === 2);
+const miniCombo2 = SITE.combos.find((c) => c.format === 'botellita' && c.qty === 2);
+const miniCombo3 = SITE.combos.find((c) => c.format === 'botellita' && c.qty === 3);
+---
+
+<section id="historia" class="story-section">
+  <div class="container">
+    <div class="story-grid">
+      <div class="story-copy">
+        <span class="eyebrow">Origen Misiones · Elaboración Artesanal</span>
+        <h2 class="story-copy__title">
+          Sabores nacidos entre la selva, la chacra y la tierra colorada
+        </h2>
+        <p class="story-copy__lead">
+          En <strong>{SITE.brandName}</strong> cada botella cuenta una historia del territorio
+          misionero. Trabajamos con frutos nativos del monte, cosechas de productores y colonos
+          locales, hierbas emblemáticas y especias nobles, respetando el tiempo de cada
+          maceración.
+        </p>
+
+        <div class="pillars-list">
+          <div class="pillar-card">
+            <span class="pillar-card__num">01</span>
+            <div>
+              <h3>Materia prima de Misiones</h3>
+              <p>
+                Seleccionamos frutos del monte como jaboticaba, pitanga, butiá y guabirova, junto a
+                cítricos y frutas tropicales de chacras locales.
+              </p>
+            </div>
+          </div>
+
+          <div class="pillar-card">
+            <span class="pillar-card__num">02</span>
+            <div>
+              <h3>Pequeños lotes y maceración lenta</h3>
+              <p>
+                Respetamos la estacionalidad de cada ingrediente para lograr colores naturales,
+                aromas genuinos y un paso suave al paladar.
+              </p>
+            </div>
+          </div>
+
+          <div class="pillar-card">
+            <span class="pillar-card__num">03</span>
+            <div>
+              <h3>Hecho para compartir y regalar</h3>
+              <p>
+                Cada botella está terminada a mano con hilo de yute y sello Norhydé, pensada para
+                sobremesas, degustaciones y obsequios regionales.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="formatos" class="formats-showcase">
+        <div
+          class="formats-panel scallop-bottom-edge"
+          style="--scallop-color: var(--bg-cream-soft);"
+        >
+          <span class="eyebrow">Dos presentaciones</span>
+          <h3 class="formats-panel__title">Elegí tu formato ideal</h3>
+          <p class="formats-panel__lead">
+            Mismo cuidado artesanal en dos tamaños: para compartir en la mesa o para degustar y
+            regalar varios sabores.
+          </p>
+
+          <div class="formats-cards">
+            <article class="format-compare-card">
+              <div
+                class="bottle-frame scallop-inner-rise"
+                style="--scallop-rise-color: var(--bg-cream);"
+              >
+                <img
+                  src="/assets/botellas/guabirova.jpg"
+                  alt="Licor Norhydé en formato Botella grande"
+                  class="bottle-photo"
+                  loading="lazy"
+                />
+              </div>
+              <div class="format-compare-card__info">
+                <div class="format-compare-card__top">
+                  <span class="format-badge">{SITE.formats.botella.capacity}</span>
+                  <strong class="format-price">{formatARS(SITE.formats.botella.price)}</strong>
+                </div>
+                <h4>{SITE.formats.botella.label}</h4>
+                <p>{SITE.formats.botella.description}</p>
+              </div>
+            </article>
+
+            <article class="format-compare-card">
+              <div
+                class="bottle-frame scallop-inner-rise"
+                style="--scallop-rise-color: var(--bg-cream);"
+              >
+                <img
+                  src="/assets/botellitas/guabirova.jpg"
+                  alt="Licor Norhydé en formato Botellita"
+                  class="bottle-photo"
+                  loading="lazy"
+                />
+              </div>
+              <div class="format-compare-card__info">
+                <div class="format-compare-card__top">
+                  <span class="format-badge">{SITE.formats.botellita.capacity}</span>
+                  <strong class="format-price">{formatARS(SITE.formats.botellita.price)}</strong>
+                </div>
+                <h4>{SITE.formats.botellita.label}</h4>
+                <p>{SITE.formats.botellita.description}</p>
+              </div>
+            </article>
+          </div>
+
+          {largeCombo2 && miniCombo2 && miniCombo3 && (
+            <div class="formats-combo-note">
+              <strong>Combos (sabores a elección):</strong> Grandes {largeCombo2.qty} por{' '}
+              {formatARS(largeCombo2.price)} · Botellitas {miniCombo2.qty} por{' '}
+              {formatARS(miniCombo2.price)} / {miniCombo3.qty} por {formatARS(miniCombo3.price)}.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .story-section {
+    background: var(--bg-cream);
+    padding-block: 4rem 4.6rem;
+  }
+
+  .story-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.05fr;
+    gap: 2.5rem;
+    align-items: center;
+  }
+
+  .story-copy__title {
+    margin-top: 0.45rem;
+    font-size: clamp(1.75rem, 3vw, 2.4rem);
+  }
+
+  .story-copy__lead {
+    margin: 0.9rem 0 1.5rem;
+    color: var(--brown-medium);
+    font-size: 1rem;
+  }
+
+  .pillars-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.95rem;
+  }
+
+  .pillar-card {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 1rem 1.1rem;
+    background: var(--bg-cream-soft);
+    border: 1.5px solid var(--border-warm);
+    border-radius: var(--radius-md);
+  }
+
+  .pillar-card__num {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--terracotta);
+    background: var(--bg-butter);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .pillar-card h3 {
+    font-size: 1.08rem;
+  }
+
+  .pillar-card p {
+    margin: 0.25rem 0 0;
+    font-size: 0.9rem;
+    color: var(--brown-muted);
+  }
+
+  .formats-panel {
+    background: var(--bg-cream-soft);
+    border: 1.5px solid var(--border-warm);
+    border-bottom: none;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: 1.65rem 1.5rem 1.85rem;
+    box-shadow: var(--shadow-card);
+  }
+
+  .formats-panel.scallop-bottom-edge::after {
+    left: -1.5px;
+    right: -1.5px;
+  }
+
+  .formats-panel__title {
+    margin-top: 0.35rem;
+    font-size: 1.65rem;
+  }
+
+  .formats-panel__lead {
+    margin: 0.45rem 0 1.35rem;
+    font-size: 0.93rem;
+    color: var(--brown-medium);
+  }
+
+  .formats-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .format-compare-card {
+    background: var(--bg-cream);
+    border: 1.5px solid var(--border-warm);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .format-compare-card__info {
+    position: relative;
+    z-index: 3;
+    margin-top: -2px;
+    background: var(--bg-cream);
+    padding: 0.85rem 0.9rem 1rem;
+  }
+
+  .format-compare-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .format-price {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    color: var(--terracotta-dark);
+  }
+
+  .formats-combo-note {
+    margin-top: 1rem;
+    padding: 0.72rem 0.95rem;
+    border-radius: var(--radius-sm);
+    background: var(--bg-butter);
+    border: 1px solid var(--terracotta-soft);
+    font-size: 0.86rem;
+    color: var(--brown-deep);
+    text-align: center;
+  }
+
+  .format-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.18rem 0.58rem;
+    border-radius: var(--radius-pill);
+    background: var(--bg-butter);
+    color: var(--terracotta-dark);
+  }
+
+  .format-compare-card__info h4 {
+    margin-top: 0.45rem;
+    font-size: 1.08rem;
+  }
+
+  .format-compare-card__info p {
+    margin: 0.32rem 0 0;
+    font-size: 0.84rem;
+    color: var(--brown-muted);
+  }
+
+  @media (max-width: 960px) {
+    .story-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .formats-cards {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

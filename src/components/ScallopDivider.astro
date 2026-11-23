@@ -1,0 +1,92 @@
+---
+interface Props {
+  topColor?: string;
+  bottomColor?: string;
+  direction?: 'up' | 'down';
+  strokeColor?: string;
+  height?: number;
+}
+
+const {
+  topColor = 'var(--bg-cream)',
+  bottomColor = 'var(--bg-butter)',
+  direction = 'up',
+  strokeColor = 'rgba(197, 90, 23, 0.16)',
+  height = 20,
+} = Astro.props;
+
+const uid = `scallop-${Math.random().toString(36).slice(2, 9)}`;
+const tileW = 40;
+const halfW = tileW / 2;
+---
+
+<div
+  class="scallop-divider"
+  style={`background-color: ${topColor}; height: ${height}px;`}
+  aria-hidden="true"
+>
+  <svg
+    class="scallop-divider__svg"
+    width="100%"
+    height={height}
+    preserveAspectRatio="none"
+  >
+    <defs>
+      <pattern
+        id={uid}
+        width={tileW}
+        height={height}
+        patternUnits="userSpaceOnUse"
+      >
+        {
+          direction === 'up' ? (
+            <>
+              <path
+                d={`M 0 ${height} A ${halfW} ${height - 2} 0 0 1 ${tileW} ${height} Z`}
+                fill={bottomColor}
+              />
+              <path
+                d={`M 0 ${height} A ${halfW} ${height - 2} 0 0 1 ${tileW} ${height}`}
+                fill="none"
+                stroke={strokeColor}
+                stroke-width="1.2"
+              />
+            </>
+          ) : (
+            <>
+              <rect width={tileW} height={height} fill={bottomColor} />
+              <path
+                d={`M 0 0 A ${halfW} ${height - 2} 0 0 0 ${tileW} 0 Z`}
+                fill={topColor}
+              />
+              <path
+                d={`M 0 0 A ${halfW} ${height - 2} 0 0 0 ${tileW} 0`}
+                fill="none"
+                stroke={strokeColor}
+                stroke-width="1.2"
+              />
+            </>
+          )
+        }
+      </pattern>
+    </defs>
+    <rect width="100%" height={height} fill={`url(#${uid})`} />
+  </svg>
+</div>
+
+<style>
+  .scallop-divider {
+    width: 100%;
+    line-height: 0;
+    overflow: hidden;
+    display: block;
+    position: relative;
+    z-index: 2;
+  }
+
+  .scallop-divider__svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+</style>

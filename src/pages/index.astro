@@ -1,0 +1,994 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import ScallopDivider from '../components/ScallopDivider.astro';
+import CatalogSection from '../components/CatalogSection.astro';
+import StorySection from '../components/StorySection.astro';
+import ContactSection from '../components/ContactSection.astro';
+import Footer from '../components/Footer.astro';
+import ProductModal from '../components/ProductModal.astro';
+import CartDrawer from '../components/CartDrawer.astro';
+import { SITE } from '../data/site';
+import { CATALOG_LINES, PRODUCTS } from '../data/catalog';
+
+const clientCatalogPayload = {
+  site: {
+    brandName: SITE.brandName,
+    whatsappNumber: SITE.whatsappNumber.replace(/\D/g, ''),
+    logoPath: SITE.logoPath,
+    formats: SITE.formats,
+    combos: SITE.combos,
+  },
+  lines: CATALOG_LINES,
+  products: PRODUCTS,
+};
+---
+
+<Layout>
+  <Header />
+
+  <main>
+    <Hero />
+    <ScallopDivider
+      topColor="var(--bg-cream)"
+      bottomColor="var(--bg-butter-soft)"
+      direction="up"
+      height={22}
+    />
+    <CatalogSection />
+    <ScallopDivider
+      topColor="var(--bg-butter-soft)"
+      bottomColor="var(--bg-cream)"
+      direction="up"
+      height={22}
+    />
+    <StorySection />
+    <ScallopDivider
+      topColor="var(--bg-cream)"
+      bottomColor="var(--bg-butter-soft)"
+      direction="up"
+      height={22}
+    />
+    <ContactSection />
+  </main>
+
+  <ScallopDivider
+    topColor="var(--bg-butter-soft)"
+    bottomColor="var(--brown-deep)"
+    direction="up"
+    strokeColor="rgba(246, 229, 189, 0.25)"
+    height={22}
+  />
+  <Footer />
+
+  <ProductModal />
+  <CartDrawer />
+
+  <div id="toast-banner" class="toast" role="status" aria-live="polite"></div>
+
+  <script
+    id="catalog-data"
+    type="application/json"
+    set:html={JSON.stringify(clientCatalogPayload)}
+  />
+
+  <script>
+    interface FormatMeta {
+      id: 'botella' | 'botellita';
+      label: string;
+      shortLabel: string;
+      capacity: string;
+      price: number;
+    }
+
+    interface ComboMeta {
+      format: 'botella' | 'botellita';
+      qty: number;
+      price: number;
+      label: string;
+      savings: number;
+    }
+
+    interface LineItem {
+      id: string;
+      name: string;
+      badge: string;
+      description: string;
+    }
+
+    interface ProductItem {
+      id: string;
+      name: string;
+      lineId: string;
+      shortNote: string;
+      description: string;
+      servingSuggestion: string;
+      images: {
+        botella: string | null;
+        botellita: string | null;
+      };
+      defaultFormat: 'botella' | 'botellita';
+    }
+
+    interface CatalogPayload {
+      site: {
+        brandName: string;
+        whatsappNumber: string;
+        logoPath: string;
+        formats: Record<'botella' | 'botellita', FormatMeta>;
+        combos: ComboMeta[];
+      };
+      lines: LineItem[];
+      products: ProductItem[];
+    }
+
+    interface CartEntry {
+      productId: string;
+      format: 'botella' | 'botellita';
+      qty: number;
+    }
+
+    const dataEl = document.getElementById('catalog-data');
+    if (dataEl?.textContent) {
+      const payload = JSON.parse(dataEl.textContent) as CatalogPayload;
+      const productMap = new Map(payload.products.map((p) => [p.id, p]));
+      const lineMap = new Map(payload.lines.map((l) => [l.id, l]));
+
+      const formatARS = (amount: number) => `$${amount.toLocaleString('es-AR')}`;
+
+      const normalizeText = (value: string) =>
+        value
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim();
+
+      // =====================================================
+      // MENÚ MÓVIL
+      // =====================================================
+      const mobileToggle = document.getElementById('mobile-menu-toggle') as HTMLButtonElement | null;
+      const mobilePanel = document.getElementById('mobile-nav-panel');
+      if (mobileToggle && mobilePanel) {
+        mobileToggle.addEventListener('click', () => {
+          const isOpen = !mobilePanel.hasAttribute('hidden');
+          if (isOpen) {
+            mobilePanel.setAttribute('hidden', '');
+            mobileToggle.setAttribute('aria-expanded', 'false');
+          } else {
+            mobilePanel.removeAttribute('hidden');
+            mobileToggle.setAttribute('aria-expanded', 'true');
+          }
+        });
+
+        mobilePanel.querySelectorAll('.mobile-nav__link').forEach((link) => {
+          link.addEventListener('click', () => {
+            mobilePanel.setAttribute('hidden', '');
+            mobileToggle.setAttribute('aria-expanded', 'false');
+          });
+        });
+      }
+
+      // =====================================================
+      // TOAST DE CONFIRMACIÓN
+      // =====================================================
+      const toastEl = document.getElementById('toast-banner');
+      let toastTimer: number | undefined;
+
+      const showToast = (message: string) => {
+        if (!toastEl) return;
+        toastEl.textContent = message;
+        toastEl.classList.add('is-visible');
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => {
+          toastEl.classList.remove('is-visible');
+        }, 2400);
+      };
+
+      // =====================================================
+      // CAMBIO DE FORMATO EN TARJETAS
+      // =====================================================
+      const setCardFormat = (card: HTMLElement, format: 'botella' | 'botellita') => {
+        card.dataset.activeFormat = format;
+        const imgUrl =
+          format === 'botella' ? card.dataset.imgBotella || '' : card.dataset.imgBotellita || '';
+
+        const mediaBox = card.querySelector('.product-card__media');
+        if (mediaBox) {
+          let imgEl = mediaBox.querySelector('.product-card__img') as HTMLImageElement | null;
+          const placeholderEl = mediaBox.querySelector('.product-card__placeholder');
+          const badgeEl = mediaBox.querySelector('[data-card-format-badge]');
+
+          if (badgeEl) {
+            badgeEl.textContent = payload.site.formats[format].shortLabel;
+          }
+
+          if (imgUrl) {
+            if (!imgEl) {
+              imgEl = document.createElement('img');
+              imgEl.className = 'bottle-photo product-card__img';
+              imgEl.loading = 'lazy';
+              const product = productMap.get(card.dataset.productId || '');
+              imgEl.alt = `Licor artesanal Norhydé de ${product?.name ?? ''}`;
+              mediaBox.prepend(imgEl);
+            }
+            imgEl.src = imgUrl;
+            imgEl.hidden = false;
+            if (placeholderEl) placeholderEl.setAttribute('hidden', '');
+          } else {
+            if (imgEl) imgEl.hidden = true;
+            if (placeholderEl) placeholderEl.removeAttribute('hidden');
+          }
+        }
+
+        card.querySelectorAll<HTMLButtonElement>('[data-card-format]').forEach((btn) => {
+          const isMatch = btn.dataset.cardFormat === format;
+          btn.classList.toggle('is-active', isMatch);
+          btn.setAttribute('aria-pressed', isMatch ? 'true' : 'false');
+        });
+
+        const priceEl = card.querySelector('[data-card-price]');
+        if (priceEl) {
+          priceEl.textContent = formatARS(payload.site.formats[format].price);
+        }
+      };
+
+      // =====================================================
+      // FILTROS Y BÚSQUEDA DEL CATÁLOGO
+      // =====================================================
+      const searchInput = document.getElementById('catalog-search') as HTMLInputElement | null;
+      const clearSearchBtn = document.getElementById('clear-search-btn');
+      const resultsCountEl = document.getElementById('catalog-results-count');
+      const resetFiltersBtn = document.getElementById('reset-filters-btn');
+      const emptyResetBtn = document.getElementById('empty-reset-btn');
+      const emptyStateEl = document.getElementById('catalog-empty-state');
+
+      const formatFilterBtns = Array.from(
+        document.querySelectorAll<HTMLButtonElement>('[data-format-filter]')
+      );
+      const lineFilterBtns = Array.from(
+        document.querySelectorAll<HTMLButtonElement>('[data-line-filter]')
+      );
+      const lineBlocks = Array.from(document.querySelectorAll<HTMLElement>('[data-line-group]'));
+      const productCards = Array.from(document.querySelectorAll<HTMLElement>('.product-card'));
+
+      let activeSearch = '';
+      let activeFormatFilter: 'all' | 'botella' | 'botellita' | 'with-photo' = 'all';
+      let activeLineFilter = 'all';
+
+      const applyFilters = () => {
+        const query = normalizeText(activeSearch);
+        let visibleCount = 0;
+        let visibleLinesCount = 0;
+
+        if (clearSearchBtn) {
+          if (activeSearch.trim().length > 0) {
+            clearSearchBtn.removeAttribute('hidden');
+          } else {
+            clearSearchBtn.setAttribute('hidden', '');
+          }
+        }
+
+        productCards.forEach((card) => {
+          const lineId = card.dataset.lineId || '';
+          const searchBlob = normalizeText(card.dataset.search || '');
+          const hasBotella = card.dataset.hasBotella === 'true';
+          const hasBotellita = card.dataset.hasBotellita === 'true';
+
+          const matchesLine = activeLineFilter === 'all' || lineId === activeLineFilter;
+          const matchesSearch = !query || searchBlob.includes(query);
+
+          let matchesFormat = true;
+          if (activeFormatFilter === 'botella') {
+            matchesFormat = hasBotella;
+            if (matchesFormat) setCardFormat(card, 'botella');
+          } else if (activeFormatFilter === 'botellita') {
+            matchesFormat = hasBotellita;
+            if (matchesFormat) setCardFormat(card, 'botellita');
+          } else if (activeFormatFilter === 'with-photo') {
+            matchesFormat = hasBotella || hasBotellita;
+          }
+
+          const shouldShow = matchesLine && matchesSearch && matchesFormat;
+          if (shouldShow) {
+            card.removeAttribute('hidden');
+            visibleCount += 1;
+          } else {
+            card.setAttribute('hidden', '');
+          }
+        });
+
+        lineBlocks.forEach((block) => {
+          const visibleInside = block.querySelectorAll('.product-card:not([hidden])').length;
+          if (visibleInside > 0) {
+            block.removeAttribute('hidden');
+            visibleLinesCount += 1;
+          } else {
+            block.setAttribute('hidden', '');
+          }
+        });
+
+        if (resultsCountEl) {
+          resultsCountEl.textContent = `Mostrando ${visibleCount} de ${payload.products.length} sabores en ${visibleLinesCount} ${
+            visibleLinesCount === 1 ? 'línea' : 'líneas'
+          }`;
+        }
+
+        const hasActiveFilters =
+          Boolean(query) || activeFormatFilter !== 'all' || activeLineFilter !== 'all';
+        if (resetFiltersBtn) {
+          if (hasActiveFilters) {
+            resetFiltersBtn.removeAttribute('hidden');
+          } else {
+            resetFiltersBtn.setAttribute('hidden', '');
+          }
+        }
+
+        if (emptyStateEl) {
+          if (visibleCount === 0) {
+            emptyStateEl.removeAttribute('hidden');
+          } else {
+            emptyStateEl.setAttribute('hidden', '');
+          }
+        }
+      };
+
+      const resetAllFilters = () => {
+        activeSearch = '';
+        activeFormatFilter = 'all';
+        activeLineFilter = 'all';
+        if (searchInput) searchInput.value = '';
+
+        formatFilterBtns.forEach((btn) =>
+          btn.classList.toggle('is-active', btn.dataset.formatFilter === 'all')
+        );
+        lineFilterBtns.forEach((btn) =>
+          btn.classList.toggle('is-active', btn.dataset.lineFilter === 'all')
+        );
+
+        productCards.forEach((card) => {
+          const prod = productMap.get(card.dataset.productId || '');
+          if (prod) setCardFormat(card, prod.defaultFormat);
+        });
+
+        applyFilters();
+      };
+
+      searchInput?.addEventListener('input', (event) => {
+        activeSearch = (event.target as HTMLInputElement).value;
+        applyFilters();
+      });
+
+      clearSearchBtn?.addEventListener('click', () => {
+        activeSearch = '';
+        if (searchInput) {
+          searchInput.value = '';
+          searchInput.focus();
+        }
+        applyFilters();
+      });
+
+      formatFilterBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const next = btn.dataset.formatFilter as typeof activeFormatFilter;
+          activeFormatFilter = next || 'all';
+          formatFilterBtns.forEach((b) => b.classList.toggle('is-active', b === btn));
+          if (activeFormatFilter === 'all') {
+            productCards.forEach((card) => {
+              const prod = productMap.get(card.dataset.productId || '');
+              if (prod) setCardFormat(card, prod.defaultFormat);
+            });
+          }
+          applyFilters();
+        });
+      });
+
+      lineFilterBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          activeLineFilter = btn.dataset.lineFilter || 'all';
+          lineFilterBtns.forEach((b) => b.classList.toggle('is-active', b === btn));
+          applyFilters();
+        });
+      });
+
+      resetFiltersBtn?.addEventListener('click', resetAllFilters);
+      emptyResetBtn?.addEventListener('click', resetAllFilters);
+
+      // =====================================================
+      // CARRITO & PEDIDO POR WHATSAPP
+      // =====================================================
+      const CART_STORAGE_KEY = 'norhyde-cart-v1';
+      const NOTE_STORAGE_KEY = 'norhyde-cart-note-v1';
+
+      let cart: CartEntry[] = [];
+      try {
+        const rawCart = localStorage.getItem(CART_STORAGE_KEY);
+        if (rawCart) {
+          const parsed = JSON.parse(rawCart);
+          if (Array.isArray(parsed)) {
+            cart = parsed.filter(
+              (item) =>
+                item &&
+                typeof item.productId === 'string' &&
+                (item.format === 'botella' || item.format === 'botellita') &&
+                typeof item.qty === 'number' &&
+                item.qty > 0 &&
+                productMap.has(item.productId)
+            );
+          }
+        }
+      } catch {
+        cart = [];
+      }
+
+      const cartBadgeEl = document.getElementById('cart-count-badge');
+      const cartDrawerEl = document.getElementById('cart-drawer');
+      const openCartBtn = document.getElementById('open-cart-btn');
+      const closeCartBtn = document.getElementById('cart-close-btn');
+      const cartItemsListEl = document.getElementById('cart-items-list');
+      const cartEmptyEl = document.getElementById('cart-empty-state');
+      const cartComboBannerEl = document.getElementById('cart-combo-banner');
+      const cartTotalUnitsEl = document.getElementById('cart-total-units');
+      const cartSubtotalRowEl = document.getElementById('cart-subtotal-row');
+      const cartSubtotalPriceEl = document.getElementById('cart-subtotal-price');
+      const cartDiscountRowEl = document.getElementById('cart-discount-row');
+      const cartDiscountPriceEl = document.getElementById('cart-discount-price');
+      const cartTotalPriceEl = document.getElementById('cart-total-price');
+      const cartNoteInput = document.getElementById('cart-note-input') as HTMLTextAreaElement | null;
+      const cartClearBtn = document.getElementById('cart-clear-btn') as HTMLButtonElement | null;
+      const cartWhatsappBtn = document.getElementById(
+        'cart-whatsapp-btn'
+      ) as HTMLButtonElement | null;
+
+      const calculateCartPricing = (entries: CartEntry[]) => {
+        const largeUnitPrice = payload.site.formats.botella.price;
+        const miniUnitPrice = payload.site.formats.botellita.price;
+        const largeCombo2Price =
+          payload.site.combos.find((c) => c.format === 'botella' && c.qty === 2)?.price ?? 28000;
+        const combo2Price =
+          payload.site.combos.find((c) => c.format === 'botellita' && c.qty === 2)?.price ?? 11000;
+        const combo3Price =
+          payload.site.combos.find((c) => c.format === 'botellita' && c.qty === 3)?.price ?? 15000;
+
+        let largeQty = 0;
+        let miniQty = 0;
+        entries.forEach((item) => {
+          if (item.format === 'botella') largeQty += item.qty;
+          else miniQty += item.qty;
+        });
+
+        const largeCombosOf2 = Math.floor(largeQty / 2);
+        const singleLarges = largeQty % 2;
+
+        const combosOf3 = Math.floor(miniQty / 3);
+        const remainder = miniQty % 3;
+        const combosOf2 = remainder === 2 ? 1 : 0;
+        const singleMinis = remainder === 1 ? 1 : 0;
+
+        const largeRegular = largeQty * largeUnitPrice;
+        const largeTotal = largeCombosOf2 * largeCombo2Price + singleLarges * largeUnitPrice;
+
+        const miniRegular = miniQty * miniUnitPrice;
+        const miniTotal =
+          combosOf3 * combo3Price + combosOf2 * combo2Price + singleMinis * miniUnitPrice;
+
+        const subtotal = largeRegular + miniRegular;
+        const total = largeTotal + miniTotal;
+        const discount = subtotal - total;
+
+        return {
+          totalUnits: largeQty + miniQty,
+          largeQty,
+          miniQty,
+          largeCombosOf2,
+          singleLarges,
+          combosOf3,
+          combosOf2,
+          singleMinis,
+          largeCombo2Price,
+          combo2Price,
+          combo3Price,
+          subtotal,
+          discount,
+          total,
+        };
+      };
+
+      if (cartNoteInput) {
+        try {
+          cartNoteInput.value = localStorage.getItem(NOTE_STORAGE_KEY) || '';
+        } catch {
+          // noop
+        }
+        cartNoteInput.addEventListener('input', () => {
+          try {
+            localStorage.setItem(NOTE_STORAGE_KEY, cartNoteInput.value);
+          } catch {
+            // noop
+          }
+        });
+      }
+
+      const saveCart = () => {
+        try {
+          localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+        } catch {
+          // noop
+        }
+      };
+
+      const renderCart = () => {
+        const pricing = calculateCartPricing(cart);
+        const { totalUnits } = pricing;
+
+        if (cartBadgeEl) {
+          cartBadgeEl.textContent = String(totalUnits);
+          if (totalUnits > 0) {
+            cartBadgeEl.removeAttribute('hidden');
+          } else {
+            cartBadgeEl.setAttribute('hidden', '');
+          }
+        }
+
+        if (cartTotalUnitsEl) {
+          cartTotalUnitsEl.textContent = String(totalUnits);
+        }
+
+        if (cartSubtotalPriceEl) cartSubtotalPriceEl.textContent = formatARS(pricing.subtotal);
+        if (cartDiscountPriceEl) cartDiscountPriceEl.textContent = `-${formatARS(pricing.discount)}`;
+        if (cartTotalPriceEl) cartTotalPriceEl.textContent = formatARS(pricing.total);
+
+        if (cartSubtotalRowEl && cartDiscountRowEl) {
+          if (pricing.discount > 0) {
+            cartSubtotalRowEl.removeAttribute('hidden');
+            cartDiscountRowEl.removeAttribute('hidden');
+          } else {
+            cartSubtotalRowEl.setAttribute('hidden', '');
+            cartDiscountRowEl.setAttribute('hidden', '');
+          }
+        }
+
+        if (cartComboBannerEl) {
+          if (totalUnits === 0) {
+            cartComboBannerEl.setAttribute('hidden', '');
+            cartComboBannerEl.classList.remove('is-applied');
+          } else {
+            const appliedParts: string[] = [];
+            if (pricing.largeCombosOf2 > 0) {
+              appliedParts.push(
+                `${pricing.largeCombosOf2} ${
+                  pricing.largeCombosOf2 === 1 ? 'combo' : 'combos'
+                } de 2 botellas grandes (${formatARS(pricing.largeCombo2Price)})`
+              );
+            }
+            if (pricing.combosOf3 > 0) {
+              appliedParts.push(
+                `${pricing.combosOf3} ${pricing.combosOf3 === 1 ? 'combo' : 'combos'} de 3 botellitas (${formatARS(
+                  pricing.combo3Price
+                )})`
+              );
+            }
+            if (pricing.combosOf2 > 0) {
+              appliedParts.push(`1 combo de 2 botellitas (${formatARS(pricing.combo2Price)})`);
+            }
+
+            const hints: string[] = [];
+            if (pricing.singleLarges === 1) {
+              hints.push(
+                `sumá 1 botella grande más para llevar 2 por ${formatARS(pricing.largeCombo2Price)}`
+              );
+            }
+            if (pricing.singleMinis === 1) {
+              hints.push(
+                `sumá 1 botellita más para llevar 2 por ${formatARS(pricing.combo2Price)} o 2 más para 3 por ${formatARS(
+                  pricing.combo3Price
+                )}`
+              );
+            } else if (pricing.combosOf2 === 1) {
+              hints.push(
+                `sumá 1 botellita más para pasar al combo de 3 por ${formatARS(pricing.combo3Price)}`
+              );
+            }
+
+            cartComboBannerEl.removeAttribute('hidden');
+            if (appliedParts.length > 0) {
+              cartComboBannerEl.classList.add('is-applied');
+              let msg = `¡Promo aplicada! ${appliedParts.join(' + ')} — ahorrás ${formatARS(
+                pricing.discount
+              )}.`;
+              if (hints.length > 0) {
+                const tip = hints.join(' y ');
+                msg += ` Además, ${tip}.`;
+              }
+              cartComboBannerEl.textContent = msg;
+            } else {
+              cartComboBannerEl.classList.remove('is-applied');
+              const tip = hints.join(' o ');
+              cartComboBannerEl.textContent = `Tip: ${tip}.`;
+            }
+          }
+        }
+
+        if (cartClearBtn) cartClearBtn.disabled = totalUnits === 0;
+        if (cartWhatsappBtn) cartWhatsappBtn.disabled = totalUnits === 0;
+
+        if (!cartItemsListEl || !cartEmptyEl) return;
+
+        cartItemsListEl.innerHTML = '';
+
+        if (cart.length === 0) {
+          cartEmptyEl.removeAttribute('hidden');
+          return;
+        }
+
+        cartEmptyEl.setAttribute('hidden', '');
+
+        cart.forEach((entry) => {
+          const product = productMap.get(entry.productId);
+          if (!product) return;
+
+          const fmtMeta = payload.site.formats[entry.format];
+          const thumbSrc = product.images[entry.format] || payload.site.logoPath;
+          const isLogoThumb = !product.images[entry.format];
+
+          const li = document.createElement('li');
+          li.className = 'cart-item';
+
+          const thumbWrap = document.createElement('div');
+          thumbWrap.className = `cart-item__thumb ${isLogoThumb ? 'cart-item__thumb--logo' : ''}`;
+          const img = document.createElement('img');
+          img.src = thumbSrc;
+          img.alt = product.name;
+          thumbWrap.appendChild(img);
+
+          const info = document.createElement('div');
+          const title = document.createElement('span');
+          title.className = 'cart-item__title';
+          title.textContent = product.name;
+          const meta = document.createElement('span');
+          meta.className = 'cart-item__meta';
+          meta.textContent = `${fmtMeta.label} (${fmtMeta.capacity}) · ${formatARS(fmtMeta.price)} c/u`;
+          info.append(title, meta);
+
+          const controls = document.createElement('div');
+          controls.className = 'cart-item__controls';
+
+          const qtyGroup = document.createElement('div');
+          qtyGroup.className = 'cart-item__qty';
+
+          const minusBtn = document.createElement('button');
+          minusBtn.type = 'button';
+          minusBtn.textContent = '−';
+          minusBtn.setAttribute('aria-label', `Restar ${product.name}`);
+          minusBtn.addEventListener('click', () => {
+            updateCartQty(entry.productId, entry.format, -1);
+          });
+
+          const qtyVal = document.createElement('span');
+          qtyVal.textContent = String(entry.qty);
+
+          const plusBtn = document.createElement('button');
+          plusBtn.type = 'button';
+          plusBtn.textContent = '+';
+          plusBtn.setAttribute('aria-label', `Sumar ${product.name}`);
+          plusBtn.addEventListener('click', () => {
+            updateCartQty(entry.productId, entry.format, 1);
+          });
+
+          qtyGroup.append(minusBtn, qtyVal, plusBtn);
+
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'cart-item__remove';
+          removeBtn.textContent = 'Quitar';
+          removeBtn.addEventListener('click', () => {
+            removeFromCart(entry.productId, entry.format);
+          });
+
+          controls.append(qtyGroup, removeBtn);
+          li.append(thumbWrap, info, controls);
+          cartItemsListEl.appendChild(li);
+        });
+      };
+
+      const addToCart = (productId: string, format: 'botella' | 'botellita', qty = 1) => {
+        const product = productMap.get(productId);
+        if (!product) return;
+        const existing = cart.find(
+          (item) => item.productId === productId && item.format === format
+        );
+        if (existing) {
+          existing.qty += qty;
+        } else {
+          cart.push({ productId, format, qty });
+        }
+        saveCart();
+        renderCart();
+        showToast(
+          `Agregado: ${product.name} (${payload.site.formats[format].shortLabel} x${qty})`
+        );
+      };
+
+      const updateCartQty = (
+        productId: string,
+        format: 'botella' | 'botellita',
+        delta: number
+      ) => {
+        const idx = cart.findIndex(
+          (item) => item.productId === productId && item.format === format
+        );
+        if (idx === -1) return;
+        cart[idx].qty += delta;
+        if (cart[idx].qty <= 0) {
+          cart.splice(idx, 1);
+        }
+        saveCart();
+        renderCart();
+      };
+
+      const removeFromCart = (productId: string, format: 'botella' | 'botellita') => {
+        cart = cart.filter(
+          (item) => !(item.productId === productId && item.format === format)
+        );
+        saveCart();
+        renderCart();
+      };
+
+      const openCart = () => {
+        cartDrawerEl?.removeAttribute('hidden');
+        document.body.style.overflow = 'hidden';
+      };
+
+      const closeCart = () => {
+        cartDrawerEl?.setAttribute('hidden', '');
+        if (modalEl?.hasAttribute('hidden')) {
+          document.body.style.overflow = '';
+        }
+      };
+
+      openCartBtn?.addEventListener('click', openCart);
+      closeCartBtn?.addEventListener('click', closeCart);
+      cartDrawerEl?.addEventListener('click', (event) => {
+        if (event.target === cartDrawerEl) closeCart();
+      });
+
+      cartClearBtn?.addEventListener('click', () => {
+        cart = [];
+        saveCart();
+        renderCart();
+      });
+
+      cartWhatsappBtn?.addEventListener('click', () => {
+        if (cart.length === 0) return;
+        const pricing = calculateCartPricing(cart);
+        const lines = cart
+          .map((item) => {
+            const product = productMap.get(item.productId);
+            const fmt = payload.site.formats[item.format];
+            return `• ${product?.name ?? item.productId} — ${fmt.label} (${fmt.capacity}) x ${item.qty} (${formatARS(
+              fmt.price
+            )} c/u)`;
+          })
+          .join('\n');
+
+        const promoDetails: string[] = [];
+        if (pricing.largeCombosOf2 > 0) {
+          promoDetails.push(
+            `${pricing.largeCombosOf2} combo(s) de 2 botellas grandes (${formatARS(
+              pricing.largeCombo2Price
+            )} c/u)`
+          );
+        }
+        if (pricing.combosOf3 > 0) {
+          promoDetails.push(
+            `${pricing.combosOf3} combo(s) de 3 botellitas (${formatARS(pricing.combo3Price)} c/u)`
+          );
+        }
+        if (pricing.combosOf2 > 0) {
+          promoDetails.push(`1 combo de 2 botellitas (${formatARS(pricing.combo2Price)})`);
+        }
+
+        const note = cartNoteInput?.value.trim();
+        let message = `¡Hola ${payload.site.brandName}! Quisiera consultar stock disponible y confirmar el siguiente pedido:\n\n${lines}\n\nTotal de botellas: ${pricing.totalUnits}`;
+        if (promoDetails.length > 0) {
+          message += `\nCombos aplicados: ${promoDetails.join(' + ')} (Ahorro: ${formatARS(
+            pricing.discount
+          )})`;
+        }
+        message += `\nTotal estimado: ${formatARS(pricing.total)}`;
+        if (note) {
+          message += `\nNota: ${note}`;
+        }
+        message += '\n\n¡Muchas gracias!';
+
+        const url = `https://wa.me/${payload.site.whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(
+          message
+        )}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
+      });
+
+      // =====================================================
+      // MODAL DE DETALLE DEL PRODUCTO
+      // =====================================================
+      const modalEl = document.getElementById('product-modal');
+      const modalCloseBtn = document.getElementById('modal-close-btn');
+      const modalLineBadge = document.getElementById('modal-line-badge');
+      const modalTitle = document.getElementById('modal-product-title');
+      const modalUnitPrice = document.getElementById('modal-unit-price');
+      const modalDesc = document.getElementById('modal-product-desc');
+      const modalServing = document.getElementById('modal-serving-text');
+      const modalImg = document.getElementById('modal-product-img') as HTMLImageElement | null;
+      const modalPlaceholder = document.getElementById('modal-product-placeholder');
+      const modalPlaceholderFlavor = document.getElementById('modal-placeholder-flavor');
+      const modalFormatBtns = Array.from(
+        document.querySelectorAll<HTMLButtonElement>('[data-modal-format]')
+      );
+      const modalQtyMinus = document.getElementById('modal-qty-minus');
+      const modalQtyPlus = document.getElementById('modal-qty-plus');
+      const modalQtyValue = document.getElementById('modal-qty-value');
+      const modalAddBtn = document.getElementById('modal-add-to-cart');
+      const modalWhatsappLink = document.getElementById(
+        'modal-whatsapp-link'
+      ) as HTMLAnchorElement | null;
+
+      let modalProductId: string | null = null;
+      let modalFormat: 'botella' | 'botellita' = 'botella';
+      let modalQty = 1;
+
+      const syncModalView = () => {
+        if (!modalProductId) return;
+        const product = productMap.get(modalProductId);
+        if (!product) return;
+
+        const imgUrl = product.images[modalFormat];
+        if (imgUrl && modalImg) {
+          modalImg.src = imgUrl;
+          modalImg.alt = `Licor artesanal Norhydé de ${product.name} (${payload.site.formats[modalFormat].label})`;
+          modalImg.removeAttribute('hidden');
+          modalPlaceholder?.setAttribute('hidden', '');
+        } else {
+          if (modalImg) modalImg.setAttribute('hidden', '');
+          if (modalPlaceholderFlavor) modalPlaceholderFlavor.textContent = product.name;
+          modalPlaceholder?.removeAttribute('hidden');
+        }
+
+        modalFormatBtns.forEach((btn) => {
+          const isMatch = btn.dataset.modalFormat === modalFormat;
+          btn.classList.toggle('is-active', isMatch);
+        });
+
+        if (modalQtyValue) modalQtyValue.textContent = String(modalQty);
+
+        if (modalUnitPrice) {
+          modalUnitPrice.textContent = formatARS(payload.site.formats[modalFormat].price);
+        }
+
+        if (modalWhatsappLink) {
+          const fmt = payload.site.formats[modalFormat];
+          const text = `¡Hola ${payload.site.brandName}! Quería consultar por el licor de ${product.name} en formato ${fmt.label} (${fmt.capacity} - ${formatARS(
+            fmt.price
+          )}).`;
+          modalWhatsappLink.href = `https://wa.me/${
+            payload.site.whatsappNumber.replace(/\D/g, '')
+          }?text=${encodeURIComponent(text)}`;
+        }
+      };
+
+      const openProductModal = (productId: string, initialFormat?: 'botella' | 'botellita') => {
+        const product = productMap.get(productId);
+        if (!product || !modalEl) return;
+
+        const line = lineMap.get(product.lineId);
+        modalProductId = product.id;
+        modalFormat = initialFormat || product.defaultFormat;
+        modalQty = 1;
+
+        if (modalLineBadge) modalLineBadge.textContent = line ? line.name : 'Norhydé';
+        if (modalTitle) modalTitle.textContent = product.name;
+        if (modalDesc) modalDesc.textContent = product.description;
+        if (modalServing) modalServing.textContent = product.servingSuggestion;
+
+        syncModalView();
+        modalEl.removeAttribute('hidden');
+        document.body.style.overflow = 'hidden';
+      };
+
+      const closeProductModal = () => {
+        modalEl?.setAttribute('hidden', '');
+        if (cartDrawerEl?.hasAttribute('hidden')) {
+          document.body.style.overflow = '';
+        }
+      };
+
+      modalCloseBtn?.addEventListener('click', closeProductModal);
+      modalEl?.addEventListener('click', (event) => {
+        if (event.target === modalEl) closeProductModal();
+      });
+
+      modalFormatBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const next = btn.dataset.modalFormat as 'botella' | 'botellita';
+          if (next) {
+            modalFormat = next;
+            syncModalView();
+          }
+        });
+      });
+
+      modalQtyMinus?.addEventListener('click', () => {
+        if (modalQty > 1) {
+          modalQty -= 1;
+          syncModalView();
+        }
+      });
+
+      modalQtyPlus?.addEventListener('click', () => {
+        if (modalQty < 99) {
+          modalQty += 1;
+          syncModalView();
+        }
+      });
+
+      modalAddBtn?.addEventListener('click', () => {
+        if (!modalProductId) return;
+        addToCart(modalProductId, modalFormat, modalQty);
+        closeProductModal();
+      });
+
+      // Delegación de eventos en tarjetas del catálogo
+      document.getElementById('catalog-lines-container')?.addEventListener('click', (event) => {
+        const target = event.target as HTMLElement;
+
+        const formatBtn = target.closest<HTMLButtonElement>('[data-card-format]');
+        if (formatBtn) {
+          const card = formatBtn.closest<HTMLElement>('.product-card');
+          const nextFmt = formatBtn.dataset.cardFormat as 'botella' | 'botellita';
+          if (card && nextFmt) setCardFormat(card, nextFmt);
+          return;
+        }
+
+        const detailBtn = target.closest<HTMLElement>('[data-open-modal]');
+        if (detailBtn) {
+          const card = detailBtn.closest<HTMLElement>('.product-card');
+          const productId = detailBtn.dataset.openModal;
+          const activeFmt = (card?.dataset.activeFormat as 'botella' | 'botellita') || undefined;
+          if (productId) openProductModal(productId, activeFmt);
+          return;
+        }
+
+        const addBtn = target.closest<HTMLElement>('[data-add-cart]');
+        if (addBtn) {
+          const card = addBtn.closest<HTMLElement>('.product-card');
+          const productId = addBtn.dataset.addCart;
+          const activeFmt = (card?.dataset.activeFormat as 'botella' | 'botellita') || 'botella';
+          if (productId) addToCart(productId, activeFmt, 1);
+          return;
+        }
+
+        // También permitir abrir detalle haciendo clic sobre la imagen o título
+        const mediaOrTitle = target.closest('.product-card__media, .product-card__title');
+        if (mediaOrTitle) {
+          const card = mediaOrTitle.closest<HTMLElement>('.product-card');
+          const productId = card?.dataset.productId;
+          const activeFmt = (card?.dataset.activeFormat as 'botella' | 'botellita') || undefined;
+          if (productId) openProductModal(productId, activeFmt);
+        }
+      });
+
+      // Cerrar modales con Escape
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          if (cartDrawerEl && !cartDrawerEl.hasAttribute('hidden')) {
+            closeCart();
+          } else if (modalEl && !modalEl.hasAttribute('hidden')) {
+            closeProductModal();
+          }
+        }
+      });
+
+      // Render inicial
+      renderCart();
+      applyFilters();
+    }
+  </script>
+</Layout>
