@@ -15,12 +15,9 @@ dist/
 Thumbs.db
 *.log
 
-# Carpeta original de assets (Astro publica desde public/assets/)
-assets/
 
 # Sistema operativo y logs
 .DS_Store
 Thumbs.db
 *.log
 
-assets/
