@@ -95,7 +95,7 @@ export const PRODUCTS: Product[] = [
     servingSuggestion: 'Servir bien frío solo, con un cubo de hielo grande o en copas de sobremesa.',
     images: {
       botella: '/assets/botellas/jaboticaba.jpg',
-      botellita: null,
+      botellita: '/assets/botellitas/jaboticaba.jpg',
     },
     defaultFormat: 'botella',
   },
@@ -109,7 +109,7 @@ export const PRODUCTS: Product[] = [
     servingSuggestion: 'Ideal como aperitivo fresco con hielo y soda, o frío después de cenar.',
     images: {
       botella: '/assets/botellas/pitanga.jpg',
-      botellita: null,
+      botellita: '/assets/botellitas/pitanga.jpg',
     },
     defaultFormat: 'botella',
   },
@@ -170,16 +170,16 @@ export const PRODUCTS: Product[] = [
     defaultFormat: 'botella',
   },
   {
-    id: 'guabirova',
-    name: 'Guabirova',
+    id: 'guaviroba',
+    name: 'Guaviroba',
     lineId: 'frutos-del-monte',
     shortNote: 'Aroma cítrico-resinoso del monte, fresco y muy expresivo.',
     description:
-      'Elaborado con guabirova recolectada artesanalmente. Conserva el perfume característico de este fruto nativo, con un equilibrio vibrante entre dulzor y frescor.',
+      'Elaborado con guaviroba recolectada artesanalmente. Conserva el perfume característico de este fruto nativo, con un equilibrio vibrante entre dulzor y frescor.',
     servingSuggestion: 'Servir frío en copa de licor o con abundante hielo y piel de limón.',
     images: {
-      botella: '/assets/botellas/guabirova.jpg',
-      botellita: '/assets/botellitas/guabirova.jpg',
+      botella: '/assets/botellas/guaviroba.jpg',
+      botellita: '/assets/botellitas/guaviroba.jpg',
     },
     defaultFormat: 'botella',
   },
@@ -224,10 +224,10 @@ export const PRODUCTS: Product[] = [
       'Licor artesanal elaborado con bananas de productores locales. Textura amable y aroma cálido que evoca preparaciones caseras de sobremesa.',
     servingSuggestion: 'Delicioso frío, solo o acompañado de café espresso y postres de chocolate.',
     images: {
-      botella: null,
+      botella: '/assets/botellas/banana.jpg',
       botellita: '/assets/botellitas/banana.jpg',
     },
-    defaultFormat: 'botellita',
+    defaultFormat: 'botella',
   },
   {
     id: 'anana',
@@ -239,7 +239,7 @@ export const PRODUCTS: Product[] = [
     servingSuggestion: 'Servir bien frío con hielo o en tragos refrescantes de verano.',
     images: {
       botella: '/assets/botellas/anana.jpg',
-      botellita: null,
+      botellita: '/assets/botellitas/anana.jpg',
     },
     defaultFormat: 'botella',
   },
@@ -378,8 +378,22 @@ export const PRODUCTS: Product[] = [
       'Licor singular elaborado con fisalis (uchuva) de productores locales. Sorprende por su acidez viva y su bouquet frutal único.',
     servingSuggestion: 'Disfrutar bien frío como digestivo o en tragos de autor.',
     images: {
-      botella: null,
+      botella: '/assets/botellas/fisalis.jpg',
       botellita: null,
+    },
+    defaultFormat: 'botella',
+  },
+  {
+    id: 'carambola',
+    name: 'Carambola',
+    lineId: 'delicias-tropicales',
+    shortNote: 'Fruta estrella misionera, fresca, jugosa y suavemente agridulce.',
+    description:
+      'Elaborado con carambolas frescas cosechadas en la región. Ofrece un color ámbar cálido y notas frutales delicadas con un toque ácido muy refrescante.',
+    servingSuggestion: 'Servir bien frío solo, con hielo o como toque tropical en aperitivos con soda.',
+    images: {
+      botella: '/assets/botellas/carambola.jpg',
+      botellita: '/assets/botellitas/carambola.jpg',
     },
     defaultFormat: 'botella',
   },
@@ -396,10 +410,10 @@ export const PRODUCTS: Product[] = [
       'Elaborado con naranjas recién cosechadas de chacras misioneras. Combina aceites esenciales aromáticos de su piel con la dulzura natural de la fruta.',
     servingSuggestion: 'Servir bien frío solo, con hielo o como base para coctelería cítrica.',
     images: {
-      botella: null,
+      botella: '/assets/botellas/naranja.jpg',
       botellita: '/assets/botellitas/naranja.jpg',
     },
-    defaultFormat: 'botellita',
+    defaultFormat: 'botella',
   },
   {
     id: 'mandarina',
@@ -424,7 +438,7 @@ export const PRODUCTS: Product[] = [
       'Maceración de pomelo fresco que conserva su equilibrio entre frescor cítrico y el amargor elegante propio de la fruta.',
     servingSuggestion: 'Ideal como aperitivo con tónica, hielo y una rodaja de pomelo.',
     images: {
-      botella: null,
+      botella: '/assets/botellas/pomelo.jpg',
       botellita: null,
     },
     defaultFormat: 'botella',
@@ -572,7 +586,7 @@ export const PRODUCTS: Product[] = [
       'Elaborado en pequeños lotes cuidando la proporción justa de clavo de olor para obtener un licor cálido, expresivo y equilibrado.',
     servingSuggestion: 'Disfrutar en dosis pequeñas como digestivo o en tardes frescas.',
     images: {
-      botella: null,
+      botella: '/assets/botellas/clavodeolor.jpg',
       botellita: null,
     },
     defaultFormat: 'botella',
@@ -586,7 +600,7 @@ export const PRODUCTS: Product[] = [
       'Maceración de raíz de jengibre fresco que aporta vivacidad, calor amable en boca y un perfil estimulante.',
     servingSuggestion: 'Excelente bien frío con hielo y limón, o en cócteles con cerveza de jengibre.',
     images: {
-      botella: null,
+      botella: '/assets/botellas/jengibre.jpg',
       botellita: null,
     },
     defaultFormat: 'botella',
